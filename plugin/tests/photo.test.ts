@@ -5,9 +5,10 @@ import { CARD, LIVE, STATE, TOKEN, error, serve } from './server'
 import type { Route } from './server'
 import { PANE, world } from './world'
 
-// Photo cards (api.md §11): the terminal draws an Image, every other surface
-// a dim line; the poster types one path, sees that photos are permanent, and
-// the mod reads that one file. Off until the server's age check says pass.
+// Photo cards (api.md §11, 1.2): the terminal draws an Image, every other
+// surface a dim line; the poster types one path, sees that photos are
+// permanent, and the mod reads that one file. Before the age check the server
+// answers a post with the check's link; after a failed check the key hides.
 
 const START = { surface: 'terminal', isInteractive: true, cwd: '/work' } as const
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
@@ -92,9 +93,44 @@ describe('the poster', () => {
     expect(toasts.at(-1)).toBe('Photo on hold while a human looks. Your text card is live.')
   })
 
-  test('off while the age check has not passed', LIVE, async ($, on) => {
+  test('before the age check, a post answers with the check and its link', LIVE, async ($, on) => {
+    on('fs.read', () => ({ value: { base64: PNG } }))
     const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
-    serve(on, one => (one.path === '/cards' ? { status: 201, json: { card: { id: 'mine1' } } } : undefined))
+    const { sent } = serve(on, one => {
+      if (one.path === '/cards') return { status: 201, json: { card: { id: 'mine1' } } }
+      if (one.path === '/cards/mine1/photo') {
+        return {
+          status: 403,
+          json: { error: { code: 'age_gate_required', copy_key: 'photo.age_gate', params: { url: 'https://dooryard.test/age?c=1', vendor: 'Didit' } } },
+        }
+      }
+      return undefined
+    })
+    await $.session.start(START)
+    await $.turn.start({ text: '', turnId: 't1' })
+    await clock.advance(5000)
+    const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    await pane.press({ key: 'post' })
+    await pane.input({ key: 'post', text: 'waiting on a build' })
+    await pane.press({ key: 'photo' })
+    await pane.input({ key: 'photo', text: 'desk.png' })
+    await pane.input({ key: 'photo', text: 'desk.png' })
+    expect(sent.some(one => one.path === '/cards/mine1/photo')).toBe(true)
+    expect((await pane.find({ type: 'Text', text: /^One-time age check/ }))?.text).toBe(
+      'One-time age check before your first photo: Didit. Dooryard keeps pass or fail, never the images.',
+    )
+    expect((await pane.find({ type: 'Link' }))?.props.href).toBe('https://dooryard.test/age?c=1')
+  })
+
+  test('after a failed age check the photo key stays hidden', LIVE, async ($, on) => {
+    const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
+    const failed = { ...STATE, me: { ...STATE.me, age_gate: 'fail' } }
+    serve(on, one => {
+      if (one.path === '/turn/start') return { status: 201, json: { turn_id: 'b1', poll_ms: 5000, state: failed } }
+      if (one.path.startsWith('/state')) return { status: 200, json: failed }
+      if (one.path === '/cards') return { status: 201, json: { card: { id: 'mine1' } } }
+      return undefined
+    })
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
     await clock.advance(5000)

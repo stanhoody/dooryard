@@ -119,6 +119,7 @@ export function createFake(now: () => Promise<number>): Backend {
       })),
       ageGate: 'none',
       notices: [],
+      bandNotice: null,
     }
   }
 

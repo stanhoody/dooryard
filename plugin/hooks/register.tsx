@@ -74,6 +74,8 @@ let isPairPolling = false
 let pairRestarts = 0
 /** My card in this turn, once posted: the only card a photo can go on. */
 let myCardId: string | null = null
+/** Who runs the age check, as the server's `age_gate_required` names it (api.md 1.2). */
+let ageGateVendor = ''
 
 /** The surfaces that draw Yard: the band, the status line or the pane. */
 function isDrawable(name: string): name is Surface {
@@ -95,6 +97,12 @@ function surface(): Surface {
 /** Desktop and VS Code draw a Link only for https or localhost with no `@` (mods interface docs). */
 function isLinkable(url: string): boolean {
   return (url.startsWith('https://') || url.startsWith('http://localhost')) && !url.includes('@') && url.length <= 2048
+}
+
+/** The appeal page (api.md 1.3): on Dooryard's own host; the fake's example host for the demo. */
+function appealUrl(): string {
+  const base = typeof options.api_url === 'string' ? options.api_url.replace(/\/+$/, '') : ''
+  return backend?.kind === 'live' && base !== '' ? `${base}/appeal` : 'https://example.com/appeal'
 }
 
 function isCategory(value: string): value is YardReportCategory {
@@ -330,6 +338,8 @@ async function uploadPhoto($: EngineInterface, path: string) {
   }
   const url = answer.params?.url
   if (answer.code === 'age_gate_required' && url !== undefined && isLinkable(url)) {
+    // api.md 1.2: the one-time check before a first photo; its page is the link
+    ageGateVendor = answer.params?.vendor ?? ''
     await update($, ageGateUrl, () => url)
     return
   }
@@ -710,12 +720,17 @@ async function runCommand($: EngineInterface, args: string) {
     return { text: copy('yard.off') }
   }
   if (word === 'signout') return signOut($)
+  if (word === 'appeal') {
+    // api.md 1.3: appeals are a web page, one per decision; the answer comes back as a notice
+    await openPane($, 'appeal', true)
+    return {}
+  }
   if (word === 'signin') {
     await openPane($, 'signin', true)
     await startSignIn($)
     return {}
   }
-  if (word !== '') return { text: 'usage: /dooryard, /dooryard on, /dooryard off, /dooryard signin, /dooryard signout' }
+  if (word !== '') return { text: 'usage: /dooryard, /dooryard on, /dooryard off, /dooryard signin, /dooryard signout, /dooryard appeal' }
   if (!isEnabled) return { text: copy('yard.off') }
   if (backend?.kind === 'live' && !(await hasToken($))) {
     await openPane($, 'signin', true)
@@ -745,7 +760,7 @@ export const register: Register = (on, given) => {
     await $.command.register({
       name: 'dooryard',
       description: 'Dooryard: open the card pane while your agent works',
-      argumentHint: '[on|off|signin|signout]',
+      argumentHint: '[on|off|signin|signout|appeal]',
       immediate: true,
     })
     isEnabled = (await $.store.get('enabled')) !== false
@@ -906,6 +921,15 @@ export const register: Register = (on, given) => {
       )
     }
 
+    if (view === 'appeal') {
+      return (
+        <Box flexDirection="column">
+          <Link href={appealUrl()} />
+          <Button key="back" plain label="back" onPress={toCard} />
+        </Box>
+      )
+    }
+
     if (!isEnabled) return <Text dimColor>{copy('yard.off')}</Text>
     if (now === 'handback') {
       return <Text dimColor>{copy('pane.handback', { seconds: await read($, countdown) })}</Text>
@@ -919,6 +943,7 @@ export const register: Register = (on, given) => {
           <Text dimColor>{copy('photo.rule')}</Text>
           {held !== null && <Text>{copy('photo.permanent')}</Text>}
           {held !== null && <Text dimColor>{copy('photo.permanent.confirm')}</Text>}
+          {gate !== null && ageGateVendor !== '' && <Text>{copy('photo.age_gate', { vendor: ageGateVendor })}</Text>}
           {gate !== null && <Link href={gate} />}
           <Input
             key="photo"
@@ -1050,8 +1075,9 @@ export const register: Register = (on, given) => {
     const others = (state?.threads ?? []).filter(
       one => one.unread > 0 && one.id !== open?.id && !blocked.includes(one.handle),
     )
-    // Photo cards stay off until the server says the age check passed (E03-S7)
-    const canPhoto = myCardId !== null && state?.ageGate === 'pass'
+    // The age gate is live (api.md 1.2): a first photo post answers with the
+    // check's link; after a failed check the key stays hidden for the 30 days
+    const canPhoto = myCardId !== null && state !== null && state.ageGate !== 'fail'
     const picture = shown?.hasPhoto === true ? await read($, photo) : null
     const image =
       e.surface === 'terminal' && picture !== null && picture.cardId === shown?.id

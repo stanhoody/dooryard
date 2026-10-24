@@ -52,6 +52,7 @@ function toState(value: unknown): YardServerState {
   const raw = record(value)
   const mine = record(raw.my_card)
   const gate = record(raw.me).age_gate
+  const incident = text(record(record(raw.band_notice).params).notice)
   return {
     waiting: count(raw.waiting),
     hiWaiting: count(raw.hi_waiting),
@@ -67,6 +68,7 @@ function toState(value: unknown): YardServerState {
       .map(record)
       .filter(one => typeof one.copy_key === 'string')
       .map(one => ({ copyKey: text(one.copy_key), params: { ...strings(one.params) } })),
+    bandNotice: incident === '' ? null : incident,
   }
 }
 

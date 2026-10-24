@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { CARD, LIVE, STATE, TOKEN, error, serve } from './server'
-import { BAND, PANE, world } from './world'
+import { BAND, PANE, typed, world } from './world'
 
 // What the person sees when the server says no or says nothing (api.md §2),
 // the notices it returns once (§4), and a turn/start that failed once (§1).
@@ -74,5 +74,49 @@ describe('errors and notices', () => {
     await $.turn.start({ text: '', turnId: 't1' })
     await clock.advance(10_000)
     expect(sent).toEqual([])
+  })
+
+  test("an incident switch's line holds the band until it is lifted", LIVE, async ($, on) => {
+    const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
+    let polls = 0
+    serve(on, one => {
+      if (!one.path.startsWith('/state')) return undefined
+      polls += 1
+      const band_notice = polls === 1 ? { copy_key: 'band.notice', params: { notice: 'hellos paused for a few hours' } } : null
+      return { status: 200, json: { ...STATE, band_notice } }
+    })
+    await $.session.start(START)
+    await $.turn.start({ text: '', turnId: 't1' })
+    await clock.advance(5000)
+    const paused = await $.ui.mount({ ...BAND(true), surface: 'terminal' })
+    expect((await paused.find({ type: 'Text', text: /dooryard/ }))?.text).toBe('dooryard · hellos paused for a few hours')
+    await paused.unmount()
+    await clock.advance(5000)
+    const band = await $.ui.mount({ ...BAND(true), surface: 'terminal' })
+    expect((await band.find({ type: 'Text', text: /waiting/ }))?.text).toMatch(/^dooryard · 12 waiting/)
+  })
+
+  test('appeal and takedown notices reach the pane', LIVE, async ($, on) => {
+    const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
+    serve(on, one =>
+      one.path.startsWith('/state')
+        ? { status: 200, json: { ...STATE, notices: [{ copy_key: 'appeal.reversed', params: {} }, { copy_key: 'photo.removed.takedown', params: {} }] } }
+        : undefined,
+    )
+    await $.session.start(START)
+    await $.turn.start({ text: '', turnId: 't1' })
+    await clock.advance(5000)
+    const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect(await pane.find({ type: 'Text', text: 'Appeal reviewed. The decision is reversed and the strike removed.' })).toBeDefined()
+    expect(await pane.find({ type: 'Text', text: /^Your photo was removed/ })).toBeDefined()
+  })
+
+  test('/dooryard appeal opens a Link to the appeal page on the API host', LIVE, async ($, on) => {
+    world(on, ['terminal'], { stored: { token: TOKEN } })
+    serve(on)
+    await $.session.start(START)
+    expect(await $.command.run(typed('dooryard', 'appeal'))).toEqual({})
+    const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
+    expect((await pane.find({ type: 'Link' }))?.props.href).toBe('https://dooryard.test/appeal')
   })
 })

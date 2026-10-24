@@ -39,6 +39,8 @@ export type YardServerState = {
   ageGate: 'none' | 'pending' | 'pass' | 'fail'
   /** Lines the server returns once, for the next pane open (api.md §4). */
   notices: YardNotice[]
+  /** An incident switch's band line while it is on, else null (api.md 1.3, `band_notice`). */
+  bandNotice: string | null
 }
 
 /** One line the server returns once (api.md §4, `notices`): a copy key and its values. */
@@ -98,9 +100,9 @@ export type YardNudge = { text: string; copyKey: string }
 
 /**
  * What the pane shows: the card, the post field, the report picker, an
- * opened hello, a thread, the sign-in code, the photo path.
+ * opened hello, a thread, the sign-in code, the photo path, the appeal link.
  */
-export type YardPaneMode = 'card' | 'post' | 'report' | 'hello' | 'reply' | 'signin' | 'photo'
+export type YardPaneMode = 'card' | 'post' | 'report' | 'hello' | 'reply' | 'signin' | 'photo' | 'appeal'
 
 /** api.md §9: the report categories, no free text. */
 export type YardReportCategory = 'spam' | 'harassment' | 'sexual' | 'hate' | 'other'

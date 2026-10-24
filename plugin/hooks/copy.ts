@@ -64,6 +64,10 @@ export const COPY = {
   'report.outcome.action': 'We looked at your report on {handle}. Action taken. Thanks.',
   'decision.warning': 'Warning: your {what} broke the rule on {category}. The next one switches you to watch-only.',
   'decision.watch_only': 'Watch-only for {days} days: {category}. You can read, not post. /dooryard appeal',
+  'appeal.upheld': 'Appeal reviewed. The decision stands.',
+  'appeal.reversed': 'Appeal reviewed. The decision is reversed and the strike removed.',
+  'photo.removed.takedown':
+    'Your photo was removed after a request about an intimate image shared without consent. Text cards still work.',
   'decision.permanent': 'Your Dooryard account is closed: {category}. /dooryard appeal',
   /** Not in copy.md yet: the line for an error the server sent no string for. Flagged to E04. */
   'error.unavailable': 'server unavailable',
@@ -79,6 +83,7 @@ export const COPY = {
   'photo.rule': "Desk, screen, city, coffee. No nudity. No one else's face without their ok. Checked on upload.",
   'photo.permanent': 'Photos are permanent. Anyone who sees your card can save it. Dooryard strips location data, nothing else.',
   'photo.permanent.confirm': 'Enter posts it · Ctrl+X then X closes without posting',
+  'photo.age_gate': 'One-time age check before your first photo: {vendor}. Dooryard keeps pass or fail, never the images.',
   'photo.age_gate.link': '{url}',
   'photo.age_gate.failed': "Age check didn't pass. Text cards still work. Try again in 30 days.",
   'photo.rejected.nudity': 'Photo not posted: it reads as nudity. Desk, screen, city, coffee.',

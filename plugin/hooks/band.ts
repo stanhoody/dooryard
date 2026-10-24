@@ -23,6 +23,8 @@ export function bandLead({ phase, countdown, server, card, problem, withCard = t
   if (phase !== 'band') return undefined
   if (problem !== null) return copy('band.notice', { notice: problem })
   if (server === null) return 'dooryard'
+  // An incident switch's line stands in for the count until it is lifted (api.md 1.3)
+  if (server.bandNotice !== null) return copy('band.notice', { notice: server.bandNotice })
 
   const parts = [
     server.waiting === 0 && card === null
