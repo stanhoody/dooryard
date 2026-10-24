@@ -4,7 +4,7 @@ Dooryard. See who else is waiting on their agent, and one card from one of them.
 
 Dooryard is a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview). It runs inside Claude Code, unsandboxed, with your permissions, as every mod does. This file names everything it runs, sends and reads, so you can check it before you install.
 
-**Status: pre-release.** The repository is private until launch, so the install lines below do not work yet, and Dooryard's server is not online yet. The mod connects to the server only when Backend is set to `live`; the default is an in-memory demo with no network calls. Photo cards are built and stay off until the server's age check says pass.
+**Status: pre-release.** The mod's public repository is https://github.com/stanhoody/dooryard. Dooryard's server is not online yet. The mod connects to the server only when Backend is set to `live`; the default is an in-memory demo with no network calls. Photo cards are built and stay off until the server's age check says pass.
 
 ## Install
 
@@ -30,15 +30,15 @@ On older versions, two commands: `/plugin marketplace add stanhoody/dooryard`, t
 - Two settings in `/plugin`: **Backend**, `fake` (the default: demo cards kept in memory, no network) or `live`; and **API URL**, the one https host the mod talks to when Backend is `live`.
 - Surfaces: the band above the prompt in the terminal and the desktop app, the status line in VS Code, the pane on all three. Nothing draws in `claude -p`, cloud sessions or Desktop WSL sessions.
 
-What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.299, commit 188e82e:
+What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.299, commit bb9e058 (0.1.1):
 
 ```text
-❯ ./register.tsx hooks: session.start, command.run{command=yard}, turn.start, turn.complete, ui.close{id=yard}, ui.render{component=AbovePrompt}, ui.render{component=Pane, requestId=yard}
-❯ ./register.tsx answers its own command: command.run{command=yard}
+❯ ./register.tsx hooks: session.start, command.run{command=dooryard}, turn.start, turn.complete, ui.close{id=yard}, ui.render{component=AbovePrompt}, ui.render{component=Pane, requestId=yard}
+❯ ./register.tsx answers its own command: command.run{command=dooryard}
 ❯ ./register.tsx gating hook without .catch: ui.close{id=yard}
 ❯ ./register.tsx calls: $.clock.after, $.clock.every, $.clock.now, $.command.register, $.fs.read (via uploadPhoto), $.http.fetch, $.session.surfaces, $.session.version (via startSignIn), $.state.get, $.state.set, $.store.delete (via signOut, signedOut), $.store.get, $.store.keys (via signOut), $.store.set (via blockHandle, pollPairing, postCard, runCommand), $.ui.close (via finish, openBand), $.ui.log, $.ui.open (via openBand, openPane), $.ui.resolve, $.ui.status (via refreshStatus), $.ui.toast
-❯ ./register.tsx state writes: yard.ageGateUrl, yard.card, yard.countdown, yard.hello, yard.hidden, yard.messages, yard.mode, yard.nudge, yard.pairing, yard.phase, yard.photo, yard.photoPath, yard.problem, yard.server, yard.thread
-❯ ./register.tsx state reads: yard.ageGateUrl, yard.card, yard.countdown, yard.hello, yard.hidden, yard.messages, yard.mode, yard.nudge, yard.pairing, yard.phase, yard.photo, yard.photoPath, yard.problem, yard.server, yard.thread
+❯ ./register.tsx state writes: dooryard.ageGateUrl, dooryard.card, dooryard.countdown, dooryard.hello, dooryard.hidden, dooryard.messages, dooryard.mode, dooryard.notices, dooryard.nudge, dooryard.pairing, dooryard.phase, dooryard.photo, dooryard.photoPath, dooryard.problem, dooryard.server, dooryard.thread
+❯ ./register.tsx state reads: dooryard.ageGateUrl, dooryard.card, dooryard.countdown, dooryard.hello, dooryard.hidden, dooryard.messages, dooryard.mode, dooryard.notices, dooryard.nudge, dooryard.pairing, dooryard.phase, dooryard.photo, dooryard.photoPath, dooryard.problem, dooryard.server, dooryard.thread
 ```
 
 Run the command yourself on the commit you install and compare. `$.http.fetch` goes only to the API URL. `$.fs.read` reads only the photo you choose to post. `$.session.version` reads the Claude Code version string, sent once when you pair. `$.session.surfaces`, `$.state.*` and `$.store.*` stay on your machine.
@@ -78,7 +78,7 @@ Dooryard never asks for Claude or Anthropic credentials and never calls `$.sessi
 
 ## Dependencies
 
-None. `plugin/package.json` declares no dependencies and holds only the test script; there is no lockfile in `plugin/`, so nothing is installed with the mod (checked at commit 188e82e). No package launcher (`npx`, `uvx`) runs at install or at runtime.
+None. `plugin/package.json` declares no dependencies and holds only the test script; there is no lockfile in `plugin/`, so nothing is installed with the mod (checked at commit bb9e058). No package launcher (`npx`, `uvx`) runs at install or at runtime.
 
 ## Safety, and what Dooryard cannot promise
 

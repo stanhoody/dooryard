@@ -846,6 +846,7 @@ export const register: Register = (on, given) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const lead = await leadText($)
     const shown = await read($, card)
+    const open = await read($, thread)
     const others = await next(e)
     const isBand = now === 'band'
 
@@ -883,6 +884,14 @@ export const register: Register = (on, given) => {
             <Box flexShrink={0}>
               <Text dimColor> · </Text>
               <Button key="post" plain hotkey="3" label="post" onPress={() => void openPane($, 'post', true)} />
+            </Box>
+          )}
+          {isBand && open !== null && (
+            // On the band, so 4 from an empty prompt opens the thread (copy.md hi.sent, hi.mutual):
+            // a digit in the prompt reaches only band buttons (mods interface docs, keyboard focus)
+            <Box flexShrink={0}>
+              <Text dimColor> · </Text>
+              <Button key="reply" plain hotkey="4" label="reply" onPress={() => void openPane($, 'reply', true)} />
             </Box>
           )}
         </Box>

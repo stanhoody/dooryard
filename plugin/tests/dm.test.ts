@@ -51,8 +51,10 @@ test('the storyboard loop: 2 skips, 1 says hi, the hi comes back with one line',
   // Six seconds later tomas says hi back; the next poll opens the thread with their line
   await clock.advance(10_000)
   expect(toasts.at(-1)).toBe('tomas: ha, same. what are you shipping?')
+  // 4 is on the band now: from an empty prompt it opens the thread in the pane, focused
+  expect((await band.find({ key: 'reply' }))?.props.hotkey).toBe('4')
+  await band.press({ key: 'reply' })
   const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
-  await pane.press({ key: 'reply' })
   expect((await pane.find({ type: 'Text', text: /what are you shipping/ }))?.text).toBe('tomas: ha, same. what are you shipping?')
   await pane.input({ key: 'reply', text: 'a band for the wait' })
   expect((await pane.find({ type: 'Text', text: /band for the wait/ }))?.text).toBe('you: a band for the wait')

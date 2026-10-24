@@ -4,7 +4,7 @@ Dooryard. See who else is waiting on their agent, and one card from one of them.
 
 Dooryard is a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview). It runs inside Claude Code, unsandboxed, with your permissions, as every mod does. This file names everything it runs, sends and reads, so you can check it before you install.
 
-**Status: pre-release.** Dooryard's server is not online yet. The mod connects to the server only when Backend is set to `live`; the default is an in-memory demo with no network calls. Photo cards are built and stay off until the server's age check says pass.
+**Status: pre-release.** The mod's public repository is https://github.com/stanhoody/dooryard. Dooryard's server is not online yet. The mod connects to the server only when Backend is set to `live`; the default is an in-memory demo with no network calls. Photo cards are built and stay off until the server's age check says pass.
 
 ## Install
 
@@ -30,11 +30,9 @@ On older versions, two commands: `/plugin marketplace add stanhoody/dooryard`, t
 - Two settings in `/plugin`: **Backend**, `fake` (the default: demo cards kept in memory, no network) or `live`; and **API URL**, the one https host the mod talks to when Backend is `live`.
 - Surfaces: the band above the prompt in the terminal and the desktop app, the status line in VS Code, the pane on all three. Nothing draws in `claude -p`, cloud sessions or Desktop WSL sessions.
 
-What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.299, commit c74859a:
+What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.299, commit bb9e058 (0.1.1):
 
 ```text
-❯ types ./types/index.d.ts declares on $: nothing (no EngineInterface member)
-❯ types ./types/index.d.ts declares state: dooryard.phase, dooryard.countdown, dooryard.server, dooryard.card, dooryard.problem, dooryard.mode, dooryard.thread, dooryard.messages, dooryard.hidden, dooryard.hello, dooryard.nudge, dooryard.pairing, dooryard.photo, dooryard.photoPath, dooryard.ageGateUrl, dooryard.notices
 ❯ ./register.tsx hooks: session.start, command.run{command=dooryard}, turn.start, turn.complete, ui.close{id=yard}, ui.render{component=AbovePrompt}, ui.render{component=Pane, requestId=yard}
 ❯ ./register.tsx answers its own command: command.run{command=dooryard}
 ❯ ./register.tsx gating hook without .catch: ui.close{id=yard}
@@ -47,7 +45,7 @@ Run the command yourself on the commit you install and compare. `$.http.fetch` g
 
 ## What it sends, and to whom
 
-With Backend set to `live`, every network call goes to `https://<app domain>` and nowhere else. Text JSON only. Polling runs only while a turn of your agent runs. Outside a turn, the mod calls Dooryard only at session start, to fetch the interface text, while the pane shows a sign-in code, and when you act in the pane. The interface text the pane shows comes from Dooryard's server: the mod fetches it with `GET /copy` once per session, with no token and nothing about you in the request, and keeps a built-in copy of the band lines for when the server is down.
+With Backend set to `live`, every network call goes to `https://<app domain>` and nowhere else. Text JSON only. Polling runs only while a turn of your agent runs. Outside a turn, the mod calls Dooryard only at session start, to fetch the interface text, while the pane shows a sign-in code, and when you act in the pane.
 
 This is the complete list of fields the mod sends:
 
@@ -80,7 +78,7 @@ Dooryard never asks for Claude or Anthropic credentials and never calls `$.sessi
 
 ## Dependencies
 
-None. `plugin/package.json` declares no dependencies and holds only the test script; there is no lockfile in `plugin/`, so nothing is installed with the mod (checked at commit c74859a). No package launcher (`npx`, `uvx`) runs at install or at runtime.
+None. `plugin/package.json` declares no dependencies and holds only the test script; there is no lockfile in `plugin/`, so nothing is installed with the mod (checked at commit bb9e058). No package launcher (`npx`, `uvx`) runs at install or at runtime.
 
 ## Safety, and what Dooryard cannot promise
 
@@ -107,11 +105,9 @@ Dooryard is not made or endorsed by Anthropic.
 
 Privacy policy: `https://<app domain>/privacy`.
 
-Service status: `https://<app domain>/status`. It says whether Dooryard is up, and shows any safety switch that is on.
-
 ## Report a vulnerability
 
-Write to `security@<app domain>`. Please do not open a public issue for a security problem. We acknowledge within 2 business days. Contact and policy in machine-readable form: `https://<app domain>/.well-known/security.txt`.
+Write to `security@<app domain>`. Please do not open a public issue for a security problem. We acknowledge within 2 business days.
 
 ## License
 

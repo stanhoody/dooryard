@@ -1,9 +1,10 @@
 {
   "name": "dooryard",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "While your agent works, see who else is waiting and one card from one of them. Say hi with one key. Adults only.",
   "author": { "name": "Stan Hoody" },
   "license": "MIT",
+  "repository": "https://github.com/stanhoody/dooryard",
   "types": "./types/index.d.ts",
   "userConfig": {
     "backend": {
