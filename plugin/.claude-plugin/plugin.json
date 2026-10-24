@@ -1,0 +1,23 @@
+{
+  "name": "dooryard",
+  "version": "0.1.0",
+  "description": "While your agent works, see who else is waiting and one card from one of them. Say hi with one key. Adults only.",
+  "author": { "name": "Stan Hoody" },
+  "license": "MIT",
+  "types": "./types/index.d.ts",
+  "userConfig": {
+    "backend": {
+      "type": "string",
+      "title": "Backend",
+      "description": "fake: cards and counts kept in memory, for the demo. live: the Dooryard API at the API URL.",
+      "options": ["fake", "live"],
+      "default": "fake"
+    },
+    "api_url": {
+      "type": "string",
+      "title": "API URL",
+      "description": "The https base URL of the Dooryard API. Used only when Backend is live. The mod talks to this one host and no other.",
+      "default": ""
+    }
+  }
+}
