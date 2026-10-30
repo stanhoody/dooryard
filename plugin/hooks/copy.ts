@@ -92,9 +92,8 @@ export const COPY = {
   'photo.too_big': '2 MiB max',
   'photo.cooldown': 'photos open 7 days after sign-in',
   /** Not in copy.md yet: the photo field's placeholder. Flagged to E04. */
-  'photo.placeholder': 'path to a .png or .jpg on this machine',
+  'photo.link': 'Add your photo on the web. Link works for 10 minutes.',
   /** Not in copy.md yet: a photo path that cannot be read. Flagged to E04. */
-  'photo.unreadable': "can't read that file",
   'yard.signin': 'Sign in at {url} · code {code} · the pane picks it up on its own',
   'yard.signin.done': 'signed in as {handle}',
 } as const

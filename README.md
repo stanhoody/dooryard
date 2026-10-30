@@ -1,6 +1,6 @@
 # Dooryard
 
-Dooryard. See who else is waiting on their agent, and one card from one of them. Say hi with one key. Adults only. Sends to Dooryard's domain: your handle, a heartbeat at turn start and end, your card, hellos and replies, and a photo only if you post one. Reads no prompts, transcripts, environment or files except that photo.
+Dooryard. See who else is waiting on their agent, and one card from one of them. Say hi with one key. Adults only. Sends to Dooryard's domain: your handle, a heartbeat at turn start and end, your card, hellos and replies, Photos are posted on Dooryard's web page, not through the mod. Reads no prompts, transcripts, environment or files.
 
 Dooryard is a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview). It runs inside Claude Code, unsandboxed, with your permissions, as every mod does. This file names everything it runs, sends and reads, so you can check it before you install.
 
@@ -32,18 +32,18 @@ The installer may print `2 userConfig options not yet set`. Claude Code prints t
 - Two settings in `/plugin`: **Backend**, `live` (the default: Dooryard's server) or `fake` (demo cards kept in memory, no network); and **API URL**, the one https host the mod talks to when Backend is `live`, `https://dooryard-kappa.vercel.app` by default.
 - Surfaces: the band above the prompt in the terminal and the desktop app, the status line in VS Code, the pane on all three. Nothing draws in `claude -p`, cloud sessions or Desktop WSL sessions.
 
-What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.299, commit bb9e058 (0.1.1):
+What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.309 (0.1.4):
 
 ```text
-❯ ./register.tsx hooks: session.start, command.run{command=dooryard}, turn.start, turn.complete, ui.close{id=yard}, ui.render{component=AbovePrompt}, ui.render{component=Pane, requestId=yard}
-❯ ./register.tsx answers its own command: command.run{command=dooryard}
-❯ ./register.tsx gating hook without .catch: ui.close{id=yard}
-❯ ./register.tsx calls: $.clock.after, $.clock.every, $.clock.now, $.command.register, $.fs.read (via uploadPhoto), $.http.fetch, $.session.surfaces, $.session.version (via startSignIn), $.state.get, $.state.set, $.store.delete (via signOut, signedOut), $.store.get, $.store.keys (via signOut), $.store.set (via blockHandle, pollPairing, postCard, runCommand), $.ui.close (via finish, openBand), $.ui.log, $.ui.open (via openBand, openPane), $.ui.resolve, $.ui.status (via refreshStatus), $.ui.toast
-❯ ./register.tsx state writes: dooryard.ageGateUrl, dooryard.card, dooryard.countdown, dooryard.hello, dooryard.hidden, dooryard.messages, dooryard.mode, dooryard.notices, dooryard.nudge, dooryard.pairing, dooryard.phase, dooryard.photo, dooryard.photoPath, dooryard.problem, dooryard.server, dooryard.thread
-❯ ./register.tsx state reads: dooryard.ageGateUrl, dooryard.card, dooryard.countdown, dooryard.hello, dooryard.hidden, dooryard.messages, dooryard.mode, dooryard.notices, dooryard.nudge, dooryard.pairing, dooryard.phase, dooryard.photo, dooryard.photoPath, dooryard.problem, dooryard.server, dooryard.thread
+  ❯ ./register.tsx hooks: session.start, command.run{command=dooryard}, turn.start, turn.complete, ui.close{id=yard}, ui.render{component=AbovePrompt}, ui.render{component=Pane, requestId=yard}
+  ❯ ./register.tsx answers its own command: command.run{command=dooryard}
+  ❯ ./register.tsx gating hook without .catch: ui.close{id=yard}
+  ❯ ./register.tsx calls: $.clock.after, $.clock.every, $.clock.now, $.command.register, $.http.fetch, $.session.surfaces, $.session.version (via startSignIn), $.state.get, $.state.set, $.store.delete (via signOut, signedOut), $.store.get, $.store.keys (via signOut), $.store.set (via blockHandle, pollPairing, postCard, runCommand), $.ui.close (via finish, openBand), $.ui.log, $.ui.open (via openBand, openPane), $.ui.resolve, $.ui.status (via refreshStatus), $.ui.toast
+  ❯ ./register.tsx state writes: dooryard.card, dooryard.countdown, dooryard.hello, dooryard.hidden, dooryard.messages, dooryard.mode, dooryard.notices, dooryard.nudge, dooryard.pairing, dooryard.phase, dooryard.photo, dooryard.photoUrl, dooryard.problem, dooryard.server, dooryard.thread
+  ❯ ./register.tsx state reads: dooryard.card, dooryard.countdown, dooryard.hello, dooryard.hidden, dooryard.messages, dooryard.mode, dooryard.notices, dooryard.nudge, dooryard.pairing, dooryard.phase, dooryard.photo, dooryard.photoUrl, dooryard.problem, dooryard.server, dooryard.thread
 ```
 
-Run the command yourself on the commit you install and compare. `$.http.fetch` goes only to the API URL. `$.fs.read` reads only the photo you choose to post. `$.session.version` reads the Claude Code version string, sent once when you pair. `$.session.surfaces`, `$.state.*` and `$.store.*` stay on your machine.
+Run the command yourself on the commit you install and compare. `$.http.fetch` goes only to the API URL. `$.session.version` reads the Claude Code version string, sent once when you pair. `$.session.surfaces`, `$.state.*` and `$.store.*` stay on your machine.
 
 ## What it sends, and to whom
 
@@ -64,7 +64,7 @@ This is the complete list of fields the mod sends:
 | You write in a thread | The text you typed, and whether you confirmed it after a "hold on" check |
 | You block | The other person's handle |
 | You report | The card or thread id, and the category |
-| You post a photo | The image from the one path you typed, its type, and your confirmation that photos are permanent. Dooryard strips its metadata on the server |
+| You post a photo | Only a request for a one-time link. The file goes from your browser to Dooryard on the web page, never through the mod |
 
 Your handle is the name you choose at sign-in. Dooryard keeps your GitHub id on its server for sign-in and bans, and never shows it to anyone.
 
@@ -72,7 +72,7 @@ Dooryard never asks for Claude or Anthropic credentials and never calls `$.sessi
 
 ## What it reads on your machine
 
-- One file, once: the photo at the path you type when you post a photo card. That is the only `$.fs.read`.
+- No files. The mod has no `$.fs.read`.
 - Its own plugin store: your on/off switch, your local blocklist and, once you sign in, your session token.
 - Which Claude Code surfaces are open (`$.session.surfaces`), to draw the band or the status line in the right place.
 - The Claude Code version string (`$.session.version`), sent once when you pair.

@@ -29,8 +29,6 @@ const ALLOWED_CALLS = [
   /^http\.fetch$/,
   /^command\.register$/,
   /^session\.(surfaces|version)$/,
-  // The one disclosed read: the photo path the person types (E02-S6)
-  /^fs\.read$/,
 ]
 
 // Loaded ahead of Yard in an environment of its own, it logs what the engine

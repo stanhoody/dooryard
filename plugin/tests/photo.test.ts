@@ -1,14 +1,13 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { photoBox, photoMime } from '../hooks/photo'
+import { photoBox } from '../hooks/photo'
 import { CARD, LIVE, STATE, TOKEN, error, serve } from './server'
 import type { Route } from './server'
 import { PANE, world } from './world'
 
 // Photo cards (api.md §11, 1.2): the terminal draws an Image, every other
-// surface a dim line; the poster types one path, sees that photos are
-// permanent, and the mod reads that one file. Before the age check the server
-// answers a post with the check's link; after a failed check the key hides.
+// surface a dim line. The poster gets a one-time link to a web page (api.md
+// 1.5); the mod reads no file. After a failed age check the key hides.
 
 const START = { surface: 'terminal', isInteractive: true, cwd: '/work' } as const
 const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='
@@ -58,16 +57,19 @@ describe('the viewer', () => {
 })
 
 describe('the poster', () => {
-  test('one path, photos are permanent, one read, one POST', LIVE, async ($, on) => {
-    const reads: { path: string; as: string }[] = []
+  const linked: Route = one =>
+    one.path === '/cards/mine1/photo-link'
+      ? { status: 201, json: { url: 'https://dooryard.test/photo?link=abc', expires_at: '2026-10-30T12:10:00.000Z' } }
+      : undefined
+
+  test('p asks for a one-time link and the pane shows it; no file is read', LIVE, async ($, on) => {
+    const reads: string[] = []
     on('fs.read', ($, e) => {
-      reads.push({ path: e.path, as: e.as })
+      reads.push(e.path)
       return { value: { base64: PNG } }
     })
-    const { clock, toasts } = world(on, ['terminal'], { stored: { token: TOKEN } })
-    const { sent } = serve(on, passed, one =>
-      one.path === '/cards/mine1/photo' ? { status: 201, json: { status: 'held' } } : undefined,
-    )
+    const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
+    const { sent } = serve(on, passed, linked)
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
     await clock.advance(5000)
@@ -78,34 +80,16 @@ describe('the poster', () => {
     expect((await pane.find({ key: 'photo', type: 'Button' }))?.props.hotkey).toBe('p')
 
     await pane.press({ key: 'photo' })
-    await pane.input({ key: 'photo', text: 'desk.png' })
+    expect(sent.some(one => one.path === '/cards/mine1/photo-link' && one.method === 'POST')).toBe(true)
+    expect((await pane.find({ type: 'Link' }))?.props.href).toBe('https://dooryard.test/photo?link=abc')
     expect(await pane.find({ type: 'Text', text: /^Photos are permanent/ })).toBeDefined()
+    expect(await pane.find({ type: 'Input' })).toBeUndefined()
     expect(reads).toEqual([])
-    await pane.input({ key: 'photo', text: 'desk.png' })
-    expect(reads.length).toBe(1)
-    expect(reads[0]?.path.endsWith('desk.png')).toBe(true)
-    expect(reads[0]?.as).toBe('bytes')
-    expect(sent.find(one => one.path === '/cards/mine1/photo')?.body).toEqual({
-      image_base64: PNG,
-      mime: 'image/png',
-      ack_permanent: true,
-    })
-    expect(toasts.at(-1)).toBe('Photo on hold while a human looks. Your text card is live.')
   })
 
-  test('before the age check, a post answers with the check and its link', LIVE, async ($, on) => {
-    on('fs.read', () => ({ value: { base64: PNG } }))
-    const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
-    const { sent } = serve(on, one => {
-      if (one.path === '/cards') return { status: 201, json: { card: { id: 'mine1' } } }
-      if (one.path === '/cards/mine1/photo') {
-        return {
-          status: 403,
-          json: { error: { code: 'age_gate_required', copy_key: 'photo.age_gate', params: { url: 'https://dooryard.test/age?c=1', vendor: 'Didit' } } },
-        }
-      }
-      return undefined
-    })
+  test('a refused link shows the server line and stays on the card', LIVE, async ($, on) => {
+    const { clock, toasts } = world(on, ['terminal'], { stored: { token: TOKEN } })
+    serve(on, passed, one => (one.path === '/cards/mine1/photo-link' ? error(403, 'cooldown') : undefined))
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
     await clock.advance(5000)
@@ -113,13 +97,8 @@ describe('the poster', () => {
     await pane.press({ key: 'post' })
     await pane.input({ key: 'post', text: 'waiting on a build' })
     await pane.press({ key: 'photo' })
-    await pane.input({ key: 'photo', text: 'desk.png' })
-    await pane.input({ key: 'photo', text: 'desk.png' })
-    expect(sent.some(one => one.path === '/cards/mine1/photo')).toBe(true)
-    expect((await pane.find({ type: 'Text', text: /^One-time age check/ }))?.text).toBe(
-      'One-time age check before your first photo: Didit. Dooryard keeps pass or fail, never the images.',
-    )
-    expect((await pane.find({ type: 'Link' }))?.props.href).toBe('https://dooryard.test/age?c=1')
+    expect(await pane.find({ type: 'Link' })).toBeUndefined()
+    expect(toasts.length).toBeGreaterThan(0)
   })
 
   test('after a failed age check the photo key stays hidden', LIVE, async ($, on) => {
@@ -139,39 +118,9 @@ describe('the poster', () => {
     await pane.input({ key: 'post', text: 'waiting on a build' })
     expect(await pane.find({ key: 'photo' })).toBeUndefined()
   })
-
-  test('over 2 MiB is not sent; the age gate answer shows its link', LIVE, async ($, on) => {
-    let big = true
-    on('fs.read', () => ({ value: { base64: big ? 'A'.repeat(2_796_205) : PNG } }))
-    const { clock, toasts } = world(on, ['terminal'], { stored: { token: TOKEN } })
-    const { sent } = serve(on, passed, one => {
-      if (one.path !== '/cards/mine1/photo') return undefined
-      const answer = error(403, 'age_gate_required')
-      return { status: 403, json: { error: { ...answer.json.error, params: { url: 'https://age.example/check?s=1' } } } }
-    })
-    await $.session.start(START)
-    await $.turn.start({ text: '', turnId: 't1' })
-    await clock.advance(5000)
-    const pane = await $.ui.mount({ ...PANE, surface: 'terminal' })
-    await pane.press({ key: 'post' })
-    await pane.input({ key: 'post', text: 'waiting on a build' })
-    await pane.press({ key: 'photo' })
-    await pane.input({ key: 'photo', text: 'big.jpg' })
-    await pane.input({ key: 'photo', text: 'big.jpg' })
-    expect(toasts.at(-1)).toBe('2 MiB max')
-    expect(sent.some(one => one.path === '/cards/mine1/photo')).toBe(false)
-
-    big = false
-    await pane.input({ key: 'photo', text: 'big.jpg' })
-    expect(sent.find(one => one.path === '/cards/mine1/photo')?.body).toMatchObject({ mime: 'image/jpeg' })
-    expect((await pane.find({ type: 'Link' }))?.props.href).toBe('https://age.example/check?s=1')
-  })
 })
 
-test('photo helpers: the two types and a box that fits the pane', () => {
-  expect(photoMime('a/Desk.PNG')).toBe('image/png')
-  expect(photoMime('b.jpeg')).toBe('image/jpeg')
-  expect(photoMime('c.gif')).toBeUndefined()
+test('photo box fits the pane', () => {
   expect(photoBox(40, 20, 60)).toEqual({ columns: 40, rows: 20 })
   expect(photoBox(80, 40, 60)).toEqual({ columns: 60, rows: 30 })
 })

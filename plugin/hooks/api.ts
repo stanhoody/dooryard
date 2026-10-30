@@ -204,11 +204,7 @@ export function createLive(base: string, io: Io): Backend {
     hidden: threadId => read(call('POST', `/threads/${id(threadId)}/hidden`), raw => messageList(raw.messages)),
     end: threadId => read(call('POST', `/threads/${id(threadId)}/end`), () => null),
     photo: cardId => read(call('GET', `/cards/${id(cardId)}/photo`), raw => toPhoto(cardId, raw)),
-    postPhoto: (cardId, imageBase64, mime) =>
-      read(
-        call('POST', `/cards/${id(cardId)}/photo`, { image_base64: imageBase64, mime, ack_permanent: true }),
-        raw => ({ status: raw.status === 'held' ? ('held' as const) : ('live' as const) }),
-      ),
+    photoLink: cardId => read(call('POST', `/cards/${id(cardId)}/photo-link`, {}), raw => ({ url: String(raw.url ?? '') })),
     block: handle => read(call('POST', '/blocks', { handle }), () => null),
     report: (category, target) =>
       read(

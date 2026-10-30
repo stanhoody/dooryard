@@ -250,7 +250,7 @@ export function createFake(now: () => Promise<number>): Backend {
     },
     // api.md §11: photos answer 501 until the age gate (E03-S7) is built
     photo: async () => ({ ok: false, code: 'not_implemented' }),
-    postPhoto: async () => ({ ok: false, code: 'not_implemented' }),
+    photoLink: async () => ({ ok: false, code: 'not_implemented' }),
     block: async handle => {
       blocked.add(handle)
       threads.delete(`fake-thread-${handle}`)

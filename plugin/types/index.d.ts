@@ -154,10 +154,8 @@ declare module 'claude-code' {
       pairing: YardPairing | null
       /** The photo of the card dealt to me, when it has one and the terminal draws it. */
       photo: YardPhoto | null
-      /** The photo path typed once; the second Enter, after `photo.permanent`, posts it. */
-      photoPath: string | null
-      /** The age-check link the server asked for, while the photo field shows it. */
-      ageGateUrl: string | null
+      /** The one-time web link for posting my card's photo, while the pane shows it. */
+      photoUrl: string | null
       /** Notices kept until the pane has shown them and closed. */
       notices: YardNotice[]
     }

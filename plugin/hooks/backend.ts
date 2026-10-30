@@ -63,8 +63,8 @@ export type Backend = {
   end: (threadId: string) => Promise<ApiResult<null>>
   /** GET /cards/{id}/photo: the PNG of a dealt card's live photo. */
   photo: (cardId: string) => Promise<ApiResult<YardPhoto>>
-  /** POST /cards/{id}/photo: my card's photo, once the person saw that photos are permanent. */
-  postPhoto: (cardId: string, imageBase64: string, mime: 'image/jpeg' | 'image/png') => Promise<ApiResult<{ status: 'live' | 'held' }>>
+  /** POST /cards/{id}/photo-link: a one-time link to the web page that posts my card's photo. */
+  photoLink: (cardId: string) => Promise<ApiResult<{ url: string }>>
   /** POST /blocks: both directions, for good. */
   block: (handle: string) => Promise<ApiResult<null>>
   /** POST /reports: a category and the card or thread, no free text. */

@@ -6,7 +6,7 @@ import { bandLead, STATUS_MAX } from './band'
 import { createBackend } from './backend'
 import type { Backend, Surface } from './backend'
 import { copy, copyOn, errorLine, isCopyKey } from './copy'
-import { MAX_PHOTO_BASE64, photoBox, photoMime } from './photo'
+import { photoBox } from './photo'
 
 // Dooryard (codename yard): a band above the prompt while the agent works. The mod handles only
 // turn.start, turn.complete, interface events and its own command; it reads
@@ -35,8 +35,7 @@ const hello = atom({ plugin: 'dooryard', key: 'hello' } as const, null)
 const nudge = atom({ plugin: 'dooryard', key: 'nudge' } as const, null)
 const pairing = atom({ plugin: 'dooryard', key: 'pairing' } as const, null)
 const photo = atom({ plugin: 'dooryard', key: 'photo' } as const, null)
-const photoPath = atom({ plugin: 'dooryard', key: 'photoPath' } as const, null)
-const ageGateUrl = atom({ plugin: 'dooryard', key: 'ageGateUrl' } as const, null)
+const photoUrl = atom({ plugin: 'dooryard', key: 'photoUrl' } as const, null)
 const notices = atom({ plugin: 'dooryard', key: 'notices' } as const, [])
 
 // The module's own variables: a reload starts them over, as it drops the timers.
@@ -74,8 +73,6 @@ let isPairPolling = false
 let pairRestarts = 0
 /** My card in this turn, once posted: the only card a photo can go on. */
 let myCardId: string | null = null
-/** Who runs the age check, as the server's `age_gate_required` names it (api.md 1.2). */
-let ageGateVendor = ''
 
 /** The surfaces that draw Yard: the band, the status line or the pane. */
 function isDrawable(name: string): name is Surface {
@@ -138,8 +135,7 @@ async function finish($: EngineInterface) {
   await update($, hello, () => null)
   await update($, nudge, () => null)
   await update($, photo, () => null)
-  await update($, photoPath, () => null)
-  await update($, ageGateUrl, () => null)
+  await update($, photoUrl, () => null)
   myCardId = null
   await refreshStatus($)
   // A sign-in in progress keeps its pane past the turn's end
@@ -299,51 +295,16 @@ async function loadPhoto($: EngineInterface, cardId: string) {
   await update($, photo, () => fetched)
 }
 
-/** The first Enter takes the path and shows `photo.permanent`; the second posts. */
-async function photoSubmit($: EngineInterface, value: string) {
-  const path = value.trim()
-  if (path.length === 0) return
-  if (photoMime(path) === undefined) {
-    $.ui.toast(copy('photo.placeholder'))
+/** A mod has no file picker: the photo goes from a web page the server links (api.md 1.5). */
+async function openPhotoLink($: EngineInterface) {
+  if (backend === undefined || myCardId === null) return
+  const answer = await backend.photoLink(myCardId)
+  if (answer.ok && isLinkable(answer.value.url)) {
+    await update($, photoUrl, () => answer.value.url)
+    await update($, mode, () => 'photo')
     return
   }
-  if ((await read($, photoPath)) !== path) {
-    await update($, photoPath, () => path)
-    return
-  }
-  await uploadPhoto($, path)
-}
-
-/** The one file the mod reads: the path the person typed, once (README, What it reads). */
-async function uploadPhoto($: EngineInterface, path: string) {
-  const mime = photoMime(path)
-  if (backend === undefined || myCardId === null || mime === undefined) return
-  let base64: string
-  try {
-    base64 = (await $.fs.read(path, { as: 'bytes' })).base64
-  } catch {
-    $.ui.toast(copy('photo.unreadable'))
-    return
-  }
-  if (base64.length > MAX_PHOTO_BASE64) {
-    $.ui.toast(copy('photo.too_big'))
-    return
-  }
-  const answer = await backend.postPhoto(myCardId, base64, mime)
-  if (answer.ok) {
-    $.ui.toast(answer.value.status === 'held' ? copy('photo.held') : copy('post.live'))
-    await update($, photoPath, () => null)
-    await update($, mode, () => 'card')
-    return
-  }
-  const url = answer.params?.url
-  if (answer.code === 'age_gate_required' && url !== undefined && isLinkable(url)) {
-    // api.md 1.2: the one-time check before a first photo; its page is the link
-    ageGateVendor = answer.params?.vendor ?? ''
-    await update($, ageGateUrl, () => url)
-    return
-  }
-  $.ui.toast(answer.code === 'too_large' ? copy('photo.too_big') : errorLine(answer))
+  $.ui.toast(answer.ok ? copy('photo.link') : errorLine(answer))
 }
 
 async function addMessages($: EngineInterface, fresh: readonly YardMessage[]) {
@@ -826,10 +787,9 @@ export const register: Register = (on, given) => {
 
   on('ui.close', { id: PANE }, async ($, e, next) => {
     // Nothing polls the pairing once its pane is gone; its notices have been shown;
-    // a photo path typed but not confirmed is dropped, so closing never posts it
     await stopPairing($)
     await update($, notices, () => [])
-    await update($, photoPath, () => null)
+    await update($, photoUrl, () => null)
     if (e.origin.kind === 'person') {
       closedForSession = true
       $.ui.toast(copy('yard.closed_pane'))
@@ -945,29 +905,14 @@ export const register: Register = (on, given) => {
     }
 
     if (view === 'photo') {
-      const held = await read($, photoPath)
-      const gate = await read($, ageGateUrl)
+      const url = await read($, photoUrl)
       return (
         <Box flexDirection="column">
           <Text dimColor>{copy('photo.rule')}</Text>
-          {held !== null && <Text>{copy('photo.permanent')}</Text>}
-          {held !== null && <Text dimColor>{copy('photo.permanent.confirm')}</Text>}
-          {gate !== null && ageGateVendor !== '' && <Text>{copy('photo.age_gate', { vendor: ageGateVendor })}</Text>}
-          {gate !== null && <Link href={gate} />}
-          <Input
-            key="photo"
-            placeholder={copy('photo.placeholder')}
-            value={held ?? ''}
-            submitLabel={held === null ? 'next' : 'post'}
-            autoFocus
-            onSubmit={value => void photoSubmit($, value)}
-          />
-          <Button
-            key="back"
-            plain
-            label="back"
-            onPress={() => void update($, photoPath, () => null).then(toCard)}
-          />
+          <Text>{copy('photo.permanent')}</Text>
+          <Text>{copy('photo.link')}</Text>
+          {url !== null && <Link href={url} />}
+          <Button key="back" plain label="back" onPress={() => void update($, photoUrl, () => null).then(toCard)} />
         </Box>
       )
     }
@@ -1084,8 +1029,7 @@ export const register: Register = (on, given) => {
     const others = (state?.threads ?? []).filter(
       one => one.unread > 0 && one.id !== open?.id && !blocked.includes(one.handle),
     )
-    // The age gate is live (api.md 1.2): a first photo post answers with the
-    // check's link; after a failed check the key stays hidden for the 30 days
+    // The web page runs the age check; after a failed check the key stays hidden for the 30 days
     const canPhoto = myCardId !== null && state !== null && state.ageGate !== 'fail'
     const picture = shown?.hasPhoto === true ? await read($, photo) : null
     const image =
@@ -1135,7 +1079,7 @@ export const register: Register = (on, given) => {
             )}
             {waiting > 0 && <Button key="see" plain hotkey="o" label="see who" onPress={() => void openHello($)} />}
             {canPhoto && (
-              <Button key="photo" plain hotkey="p" label="add photo" onPress={() => void update($, mode, () => 'photo')} />
+              <Button key="photo" plain hotkey="p" label="add photo" onPress={() => void openPhotoLink($)} />
             )}
             {shown !== null && (
               <Button key="report" plain hotkey="r" label="report" onPress={() => void startReport($, 'card')} />
