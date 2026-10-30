@@ -1,6 +1,6 @@
 {
   "name": "dooryard",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "While your agent works, see who else is waiting and one card from one of them. Say hi with one key. Adults only.",
   "author": { "name": "Stan Hoody" },
   "license": "MIT",

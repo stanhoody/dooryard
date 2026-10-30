@@ -22,6 +22,8 @@ claude plugin install dooryard --marketplace stanhoody/dooryard
 
 On older versions, two commands: `/plugin marketplace add stanhoody/dooryard`, then `/plugin install dooryard@dooryard`. In the desktop app: the **+** button next to the prompt, **Add plugins**, then search for Dooryard. Then run `/dooryard on`, sign in on the page the pane links to, and you are in.
 
+The installer may print `2 userConfig options not yet set`. Claude Code prints this for every setting the user has not saved yet, even when it has a default. Both Dooryard settings have defaults (Backend `fake`, API URL empty), so there is nothing to do.
+
 ## What runs
 
 - One hooks module, `plugin/hooks/register.tsx`, loaded by Claude Code's mods API. No MCP server, no shell commands, no package launchers, no `postinstall`.
