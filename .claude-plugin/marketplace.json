@@ -12,7 +12,7 @@
         "source": "git-subdir",
         "url": "https://github.com/stanhoody/dooryard.git",
         "path": "plugin",
-        "sha": "16b8e1f4fde2f53964f36dd1ea2bb9008374c398"
+        "sha": "f022b59f03d4db83642ab7f261e3f84381875ba9"
       },
       "displayName": "Dooryard",
       "description": "See who else is waiting on their agent, say hi with one key. Adults only. Sends only to Dooryard's own domain.",
