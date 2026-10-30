@@ -38,6 +38,15 @@ describe('the live backend', () => {
     expect(JSON.stringify(sent).includes('never sent anywhere')).toBe(false)
   })
 
+  test("with no saved settings it talks to Dooryard's server", async ($, on) => {
+    const { clock } = world(on, ['terminal'], { stored: { token: TOKEN } })
+    const { urls } = serve(on)
+    await $.session.start(START)
+    await $.turn.start({ text: '', turnId: 't1' })
+    await clock.advance(2000)
+    expect(urls[0]).toBe('https://dooryard-kappa.vercel.app/api/v1/turn/start')
+  })
+
   test('hello sends the card and the turn', LIVE, async ($, on) => {
     const { clock, toasts } = world(on, ['terminal'], { stored: { token: TOKEN } })
     const { sent } = serve(on, one =>

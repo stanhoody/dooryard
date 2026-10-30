@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'claude-code/testing'
 
 import { LIVE, TOKEN, serve } from './server'
-import { PANE, typed, world } from './world'
+import { FAKE, PANE, typed, world } from './world'
 import type { Route } from './server'
 
 // Sign-in by code and link (api.md §3): the pane shows the code and an https
@@ -98,7 +98,7 @@ describe('sign-in', () => {
     expect(answer.text).toBe('signed out · /dooryard signs you in')
   })
 
-  test('the fake backend signs in by itself for the demo', async ($, on) => {
+  test('the fake backend signs in by itself for the demo', FAKE, async ($, on) => {
     const { clock, store, toasts } = world(on, ['terminal'])
     await $.session.start(START)
     await $.command.run(typed('dooryard', 'signin'))

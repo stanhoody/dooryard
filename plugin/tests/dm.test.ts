@@ -1,13 +1,13 @@
 import { expect, test } from 'claude-code/testing'
 
-import { BAND, PANE, world } from './world'
+import { BAND, FAKE, PANE, world } from './world'
 
 // The demo path on the fake backend, as the G0 video shows it: post a card,
 // someone says hi, see who, hi back, write, and their answer lands as a toast.
 
 const START = { surface: 'terminal', isInteractive: true, cwd: '/work' } as const
 
-test('post, a hi comes in, hi back, and their answer lands as a toast', async ($, on) => {
+test('post, a hi comes in, hi back, and their answer lands as a toast', FAKE, async ($, on) => {
   const { clock, toasts } = world(on, ['terminal'])
   await $.session.start(START)
   await $.turn.start({ text: '', turnId: 't1' })
@@ -37,7 +37,7 @@ test('post, a hi comes in, hi back, and their answer lands as a toast', async ($
   expect(await pane.find({ key: 'reply' })).toBeUndefined()
 })
 
-test('the storyboard loop: 2 skips, 1 says hi, the hi comes back with one line', async ($, on) => {
+test('the storyboard loop: 2 skips, 1 says hi, the hi comes back with one line', FAKE, async ($, on) => {
   const { clock, toasts } = world(on, ['terminal'])
   await $.session.start(START)
   await $.turn.start({ text: '', turnId: 't1' })

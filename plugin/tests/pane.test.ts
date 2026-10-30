@@ -1,12 +1,12 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { BAND, PANE, done, typed, world } from './world'
+import { BAND, FAKE, PANE, done, typed, world } from './world'
 
 const START = { surface: 'terminal', isInteractive: true, cwd: '/work' } as const
 
 describe('the pane', () => {
   for (const surface of ['terminal', 'desktop'] as const) {
-    test(`shows the card in full with 1 2 3 r b (${surface})`, async ($, on) => {
+    test(`shows the card in full with 1 2 3 r b (${surface})`, FAKE, async ($, on) => {
       const { clock } = world(on, [surface])
       await $.session.start({ ...START, surface })
       await $.turn.start({ text: '', turnId: 't1' })
@@ -21,7 +21,7 @@ describe('the pane', () => {
     })
   }
 
-  test('3 on the band opens the post field, focused; Enter posts the card', async ($, on) => {
+  test('3 on the band opens the post field, focused; Enter posts the card', FAKE, async ($, on) => {
     const { clock, opened, toasts, store } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -38,7 +38,7 @@ describe('the pane', () => {
     expect(await pane.find({ key: 'post', type: 'Input' })).toBeUndefined()
   })
 
-  test('a card over 80 characters is not sent', async ($, on) => {
+  test('a card over 80 characters is not sent', FAKE, async ($, on) => {
     const { clock, toasts } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -50,7 +50,7 @@ describe('the pane', () => {
     expect(toasts.at(-1)).toBe('80 characters max')
   })
 
-  test('r picks a report category from a Select', async ($, on) => {
+  test('r picks a report category from a Select', FAKE, async ($, on) => {
     const { clock, toasts } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -63,7 +63,7 @@ describe('the pane', () => {
     expect(toasts.at(-1)).toMatch(/^Reported\./)
   })
 
-  test('b blocks at once on this machine and deals another card', async ($, on) => {
+  test('b blocks at once on this machine and deals another card', FAKE, async ($, on) => {
     const { clock, toasts, store } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -76,7 +76,7 @@ describe('the pane', () => {
     expect((await pane.find({ type: 'Text', text: /Berlin/ }))?.text).toBe('tomas · Berlin · 03:10')
   })
 
-  test('a mutual hi brings 4 reply and a text field', async ($, on) => {
+  test('a mutual hi brings 4 reply and a text field', FAKE, async ($, on) => {
     const { clock, toasts } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -94,7 +94,7 @@ describe('the pane', () => {
     expect((await pane.find({ type: 'Text', text: /ci is red/ }))?.text).toBe('you: same, ci is red')
   })
 
-  test('the pane counts down with the band and closes', async ($, on) => {
+  test('the pane counts down with the band and closes', FAKE, async ($, on) => {
     const { clock, closed } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -109,7 +109,7 @@ describe('the pane', () => {
 })
 
 describe('/dooryard', () => {
-  test('registers /dooryard to run mid-turn and opens the pane focused', async ($, on) => {
+  test('registers /dooryard to run mid-turn and opens the pane focused', FAKE, async ($, on) => {
     const { commands, opened } = world(on, ['terminal'])
     await $.session.start(START)
     expect(commands).toEqual(['dooryard'])
@@ -117,7 +117,7 @@ describe('/dooryard', () => {
     expect(opened.at(-1)).toEqual({ id: 'yard', title: 'dooryard', rows: 9, focus: true })
   })
 
-  test('/dooryard off stops the band and /dooryard on brings it back', async ($, on) => {
+  test('/dooryard off stops the band and /dooryard on brings it back', FAKE, async ($, on) => {
     const { clock, store } = world(on, ['terminal'])
     await $.session.start(START)
     const off = await $.command.run(typed('dooryard', 'off'))
@@ -137,7 +137,7 @@ describe('/dooryard', () => {
     expect(await band.find({ type: 'Text', text: /waiting/ })).toBeDefined()
   })
 
-  test('/dooryard off mid-turn closes the band at once', async ($, on) => {
+  test('/dooryard off mid-turn closes the band at once', FAKE, async ($, on) => {
     const { clock } = world(on, ['terminal'])
     await $.session.start(START)
     await $.turn.start({ text: '', turnId: 't1' })
@@ -149,7 +149,7 @@ describe('/dooryard', () => {
 })
 
 describe('opening unasked', () => {
-  test('opens the pane at 2 seconds only where it docks as a sidebar', async ($, on) => {
+  test('opens the pane at 2 seconds only where it docks as a sidebar', FAKE, async ($, on) => {
     const { clock, opened } = world(on, ['terminal'])
     await $.session.start(START)
     // The band was drawn once on a fullscreen terminal
@@ -159,7 +159,7 @@ describe('opening unasked', () => {
     expect(opened).toEqual([{ id: 'yard', title: 'dooryard', rows: 9 }])
   })
 
-  test('below the engine floor the pane stays shut and the band is the product', async ($, on) => {
+  test('below the engine floor the pane stays shut and the band is the product', FAKE, async ($, on) => {
     const { clock, opened, closed } = world(on, ['terminal'], { isPlaced: false })
     await $.session.start(START)
     await (await $.ui.mount({ ...BAND(false, true), surface: 'terminal' })).unmount()
@@ -171,7 +171,7 @@ describe('opening unasked', () => {
     expect(await band.find({ type: 'Text', text: /waiting/ })).toBeDefined()
   })
 
-  test('never on the main screen', async ($, on) => {
+  test('never on the main screen', FAKE, async ($, on) => {
     const { clock, opened } = world(on, ['terminal'])
     await $.session.start(START)
     await (await $.ui.mount({ ...BAND(false, false), surface: 'terminal' })).unmount()
@@ -183,7 +183,7 @@ describe('opening unasked', () => {
 
 
 describe('VS Code', () => {
-  test('draws the strings without key hints, since its buttons have no hotkeys', async ($, on) => {
+  test('draws the strings without key hints, since its buttons have no hotkeys', FAKE, async ($, on) => {
     const { clock, toasts } = world(on, ['vscode'])
     await $.session.start({ surface: null, isInteractive: false, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })

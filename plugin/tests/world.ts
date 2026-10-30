@@ -7,6 +7,9 @@ import type { On, PaneOpenArgs } from 'claude-code'
 /** A Thursday 01:10 UTC: the fake's Lisbon poster reads 02:10. */
 export const T0 = Date.UTC(2026, 9, 23, 1, 10)
 
+/** The fake backend, which the manifest's defaults no longer pick (0.1.3 defaults to live). */
+export const FAKE = { options: { backend: 'fake', api_url: '' } } as const
+
 export type SurfaceName = 'terminal' | 'desktop' | 'vscode' | 'mobile'
 
 export const BAND = (isWorking: boolean, isFullscreen?: boolean) =>

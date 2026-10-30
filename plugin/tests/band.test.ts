@@ -1,10 +1,10 @@
 import { describe, expect, test } from 'claude-code/testing'
 
-import { BAND, done, world } from './world'
+import { BAND, FAKE, done, world } from './world'
 
 describe('the band', () => {
   for (const surface of ['terminal', 'desktop'] as const) {
-    test(`shows only while working, from 2 seconds in (${surface})`, async ($, on) => {
+    test(`shows only while working, from 2 seconds in (${surface})`, FAKE, async ($, on) => {
       const { clock } = world(on, [surface])
       await $.session.start({ surface, isInteractive: true, cwd: '/work' })
 
@@ -29,7 +29,7 @@ describe('the band', () => {
     })
   }
 
-  test('hands back 3 seconds after the turn, counting down', async ($, on) => {
+  test('hands back 3 seconds after the turn, counting down', FAKE, async ($, on) => {
     const { clock } = world(on, ['terminal'])
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })
@@ -49,7 +49,7 @@ describe('the band', () => {
     expect(await lineAfter(1000)).toBeUndefined()
   })
 
-  test('closes at once on an interrupted turn', async ($, on) => {
+  test('closes at once on an interrupted turn', FAKE, async ($, on) => {
     const { clock } = world(on, ['terminal'])
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })
@@ -59,7 +59,7 @@ describe('the band', () => {
     expect(await band.find({ type: 'Text', text: /dooryard/ })).toBeUndefined()
   })
 
-  test('a turn under 2 seconds never draws and has no countdown', async ($, on) => {
+  test('a turn under 2 seconds never draws and has no countdown', FAKE, async ($, on) => {
     const { clock } = world(on, ['terminal'])
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })
@@ -70,7 +70,7 @@ describe('the band', () => {
     expect(await band.find({ type: 'Text', text: /dooryard/ })).toBeUndefined()
   })
 
-  test("a subagent's turn does not open the band", async ($, on) => {
+  test("a subagent's turn does not open the band", FAKE, async ($, on) => {
     const { clock } = world(on, ['terminal'])
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 'a1', agentId: 'agent-1' })
@@ -79,7 +79,7 @@ describe('the band', () => {
     expect(await band.find({ type: 'Text', text: /dooryard/ })).toBeUndefined()
   })
 
-  test('a session with no surface does nothing', async ($, on) => {
+  test('a session with no surface does nothing', FAKE, async ($, on) => {
     const { clock, statuses } = world(on, [])
     await $.session.start({ surface: null, isInteractive: false, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })
@@ -89,7 +89,7 @@ describe('the band', () => {
     expect(statuses).toEqual([])
   })
 
-  test('1 says hi once and 2 deals the next card', async ($, on) => {
+  test('1 says hi once and 2 deals the next card', FAKE, async ($, on) => {
     const { clock, toasts } = world(on, ['terminal'])
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })
@@ -105,7 +105,7 @@ describe('the band', () => {
 })
 
 describe('the VS Code status line', () => {
-  test('carries the band line without hotkeys, under 200 characters', async ($, on) => {
+  test('carries the band line without hotkeys, under 200 characters', FAKE, async ($, on) => {
     const { clock, statuses } = world(on, ['vscode'])
     await $.session.start({ surface: null, isInteractive: false, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })
@@ -119,7 +119,7 @@ describe('the VS Code status line', () => {
     expect(statuses.at(-1)).toBeUndefined()
   })
 
-  test('the terminal never sets it', async ($, on) => {
+  test('the terminal never sets it', FAKE, async ($, on) => {
     const { clock, statuses } = world(on, ['terminal'])
     await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
     await $.turn.start({ text: '', turnId: 't1' })

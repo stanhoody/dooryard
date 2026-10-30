@@ -1,6 +1,6 @@
 {
   "name": "dooryard",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "While your agent works, see who else is waiting and one card from one of them. Say hi with one key. Adults only.",
   "author": { "name": "Stan Hoody" },
   "license": "MIT",
@@ -12,13 +12,13 @@
       "title": "Backend",
       "description": "fake: cards and counts kept in memory, for the demo. live: the Dooryard API at the API URL.",
       "options": ["fake", "live"],
-      "default": "fake"
+      "default": "live"
     },
     "api_url": {
       "type": "string",
       "title": "API URL",
       "description": "The https base URL of the Dooryard API. Used only when Backend is live. The mod talks to this one host and no other.",
-      "default": ""
+      "default": "https://dooryard-kappa.vercel.app"
     }
   }
 }

@@ -4,7 +4,7 @@ Dooryard. See who else is waiting on their agent, and one card from one of them.
 
 Dooryard is a [Claude Code mod](https://code.claude.com/docs/en/plugins/mods/overview). It runs inside Claude Code, unsandboxed, with your permissions, as every mod does. This file names everything it runs, sends and reads, so you can check it before you install.
 
-**Status: pre-release.** The mod's public repository is https://github.com/stanhoody/dooryard. Dooryard's server is not online yet. The mod connects to the server only when Backend is set to `live`; the default is an in-memory demo with no network calls. Photo cards are built and stay off until the server's age check says pass.
+**Status: pre-release.** The mod's public repository is https://github.com/stanhoody/dooryard. By default the mod connects to Dooryard's server at `https://dooryard-kappa.vercel.app`. Backend `fake` switches to an in-memory demo with no network calls. Photo cards are built and stay off until the server's age check says pass.
 
 ## Install
 
@@ -22,14 +22,14 @@ claude plugin install dooryard --marketplace stanhoody/dooryard
 
 On older versions, two commands: `/plugin marketplace add stanhoody/dooryard`, then `/plugin install dooryard@dooryard`. In the desktop app: the **+** button next to the prompt, **Add plugins**, then search for Dooryard. Then run `/dooryard on`, sign in on the page the pane links to, and you are in.
 
-The installer may print `2 userConfig options not yet set`. Claude Code prints this for every setting the user has not saved yet, even when it has a default. Both Dooryard settings have defaults (Backend `fake`, API URL empty), so there is nothing to do.
+The installer may print `2 userConfig options not yet set`. Claude Code prints this for every setting the user has not saved yet, even when it has a default. Both Dooryard settings have defaults (Backend `live`, API URL `https://dooryard-kappa.vercel.app`), so there is nothing to do.
 
 ## What runs
 
 - One hooks module, `plugin/hooks/register.tsx`, loaded by Claude Code's mods API. No MCP server, no shell commands, no package launchers, no `postinstall`.
 - Hooks it registers: session start, the start and end of each turn, its own command, and the drawing and closing of its own band and pane. It passes every event through untouched.
 - No hook on prompts, tool calls or the transcript. Its code calls no `$.env`, `$.process`, `$.fs.write` or `$.model`.
-- Two settings in `/plugin`: **Backend**, `fake` (the default: demo cards kept in memory, no network) or `live`; and **API URL**, the one https host the mod talks to when Backend is `live`.
+- Two settings in `/plugin`: **Backend**, `live` (the default: Dooryard's server) or `fake` (demo cards kept in memory, no network); and **API URL**, the one https host the mod talks to when Backend is `live`, `https://dooryard-kappa.vercel.app` by default.
 - Surfaces: the band above the prompt in the terminal and the desktop app, the status line in VS Code, the pane on all three. Nothing draws in `claude -p`, cloud sessions or Desktop WSL sessions.
 
 What `claude plugin validate --strict ./plugin` prints for the module, verbatim, Claude Code 2.1.299, commit bb9e058 (0.1.1):
@@ -47,7 +47,7 @@ Run the command yourself on the commit you install and compare. `$.http.fetch` g
 
 ## What it sends, and to whom
 
-With Backend set to `live`, every network call goes to `https://<app domain>` and nowhere else. Text JSON only. Polling runs only while a turn of your agent runs. Outside a turn, the mod calls Dooryard only at session start, to fetch the interface text, while the pane shows a sign-in code, and when you act in the pane.
+With Backend set to `live`, every network call goes to the API URL, `https://dooryard-kappa.vercel.app` by default, and nowhere else. Text JSON only. Polling runs only while a turn of your agent runs. Outside a turn, the mod calls Dooryard only at session start, to fetch the interface text, while the pane shows a sign-in code, and when you act in the pane.
 
 This is the complete list of fields the mod sends:
 
